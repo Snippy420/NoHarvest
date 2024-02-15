@@ -17,26 +17,32 @@ namespace NoHarvest.Events
         private readonly UnturnedUserDirectory m_UnturnedUserDirectory;
         private readonly IConfiguration m_Configuration;
         private readonly IDataStore m_DataStore;
+        private readonly bool m_enable_no_harvest;
 
         public Harvest(UnturnedUserDirectory unturnedUserDirectory, IConfiguration configuration)
         {
             m_UnturnedUserDirectory = unturnedUserDirectory;
             m_Configuration = configuration;
+
+            m_enable_no_harvest = m_Configuration.GetValue<bool>("enable_no_harvest");
         }
 
         public async Task HandleEventAsync(object sender, UnturnedPlantHarvestingEvent @event)
         {
-            var owner = @event.Buildable.BarricadeData.owner.ToString();
-            var player = @event.InstigatorSteamId.ToString();
+            if (m_enable_no_harvest)
+            {
+                var owner = @event.Buildable.BarricadeData.owner.ToString();
+                var player = @event.InstigatorSteamId.ToString();
 
-            if (owner == player)
-            {
-                return;
-            }
-            else
-            {
-                @event.IsCancelled = true;
-                @event.Instigator.PrintMessageAsync("You can not harvest other players crops.");
+                if (owner == player)
+                {
+                    return;
+                }
+                else
+                {
+                    @event.IsCancelled = true;
+                    @event.Instigator.PrintMessageAsync("You can not harvest other players crops.");
+                }
             }
         }
     }
