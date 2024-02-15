@@ -42,9 +42,6 @@ namespace NoHarvest.Events
                 var owner = @event.Buildable.BarricadeData.owner.ToString();
                 var player = @event.InstigatorSteamId.ToString();
                 var isadmin = @event.Instigator.Player.channel.owner.isAdmin;
-                var user = @event.Instigator;
-
-                @event.Instigator.PrintMessageAsync(isadmin.ToString());
 
                 if (owner == player)
                 {
