@@ -3,3 +3,4 @@
 
 enable_no_harvest: true
 allow_admin_bypass: true
+allow_group_harvesting: true
