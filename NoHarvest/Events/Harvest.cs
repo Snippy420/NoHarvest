@@ -23,7 +23,6 @@ namespace NoHarvest.Events
         private readonly IUserManager m_UserManager;
         private readonly bool m_enable_no_harvest;
         private readonly bool m_allow_admin_bypass;
-        private readonly bool m_allow_group_harvesting;
 
         public Harvest(UnturnedUserDirectory unturnedUserDirectory, IConfiguration configuration, IPermissionChecker permissionChecker, IUserManager userManager)
         {
@@ -34,7 +33,6 @@ namespace NoHarvest.Events
 
             m_enable_no_harvest = m_Configuration.GetValue<bool>("enable_no_harvest");
             m_allow_admin_bypass = m_Configuration.GetValue<bool>("allow_admin_bypass");
-            m_allow_group_harvesting = m_Configuration.GetValue<bool>("allow_group_harvesting");
         }
 
         public async Task HandleEventAsync(object sender, UnturnedPlantHarvestingEvent @event)
@@ -42,26 +40,27 @@ namespace NoHarvest.Events
             if (m_enable_no_harvest)
             {
                 var owner = @event.Buildable.BarricadeData.owner.ToString();
-                var playerId = @event.InstigatorSteamId.ToString();
-                var steamPlayer = @event.Instigator.SteamPlayer;
+                var player = @event.InstigatorSteamId.ToString();
                 var isadmin = @event.Instigator.Player.channel.owner.isAdmin;
                 var user = @event.Instigator;
 
                 @event.Instigator.PrintMessageAsync(isadmin.ToString());
 
-                if (@event.Instigator.SteamPlayer.isMemberOfSameGroupAs(steamPlayer))
-                {
-                    @event.Instigator.PrintMessageAsync("True");
-                }
-
-                if (owner == playerId || @event.Instigator.SteamPlayer.isMemberOfSameGroupAs(steamPlayer) && m_allow_group_harvesting || isadmin && m_allow_admin_bypass)
+                if (owner == player)
                 {
                     return;
                 }
                 else
                 {
-                    @event.IsCancelled = true;
-                    @event.Instigator.PrintMessageAsync("You can not harvest other players crops.");
+                    if (isadmin && m_allow_admin_bypass)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        @event.IsCancelled = true;
+                        @event.Instigator.PrintMessageAsync("You can not harvest other players crops.");
+                    }
                 }
             }
         }
