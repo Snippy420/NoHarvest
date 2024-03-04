@@ -45,6 +45,9 @@ namespace NoHarvest.Events
                 var playerId = @event.InstigatorSteamId.ToString();
                 var steamPlayer = @event.Instigator.SteamPlayer;
                 var isadmin = @event.Instigator.Player.channel.owner.isAdmin;
+                var user = @event.Instigator;
+
+                @event.Instigator.PrintMessageAsync(isadmin.ToString());
 
                 if (@event.Instigator.SteamPlayer.isMemberOfSameGroupAs(steamPlayer))
                 {
