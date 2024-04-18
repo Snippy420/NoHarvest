@@ -16,46 +16,36 @@ namespace NoHarvest.Events
 {
     public class Harvest : IEventListener<UnturnedPlantHarvestingEvent>
     {
-        private readonly UnturnedUserDirectory m_UnturnedUserDirectory;
-        private readonly IConfiguration m_Configuration;
-        private readonly IDataStore m_DataStore;
-        private readonly IPermissionChecker m_PermissionChecker;
-        private readonly IUserManager m_UserManager;
-        private readonly bool m_enable_no_harvest;
-        private readonly bool m_allow_admin_bypass;
-        private readonly bool m_allow_group_harvest;
+        private readonly IConfiguration _Configuration;
+        private readonly bool _enable_no_harvest;
+        private readonly bool _allow_admin_bypass;
+        private readonly bool _allow_group_harvest;
 
-        public Harvest(UnturnedUserDirectory unturnedUserDirectory, IConfiguration configuration, IPermissionChecker permissionChecker, IUserManager userManager)
+        public Harvest(IConfiguration configuration)
         {
-            m_UnturnedUserDirectory = unturnedUserDirectory;
-            m_Configuration = configuration;
-            m_PermissionChecker = permissionChecker;
-            m_UserManager = userManager;
+            _Configuration = configuration;
 
-            m_enable_no_harvest = m_Configuration.GetValue<bool>("enable_no_harvest");
-            m_allow_admin_bypass = m_Configuration.GetValue<bool>("allow_admin_bypass");
-            m_allow_group_harvest = m_Configuration.GetValue<bool>("allow_group_harvest");
+            _enable_no_harvest = _Configuration.GetValue<bool>("enable_no_harvest");
+            _allow_admin_bypass = _Configuration.GetValue<bool>("allow_admin_bypass");
+            _allow_group_harvest = _Configuration.GetValue<bool>("allow_group_harvest");
         }
 
         public async Task HandleEventAsync(object sender, UnturnedPlantHarvestingEvent @event)
         {
-            if (m_enable_no_harvest)
+            if (!_enable_no_harvest)
             {
-                var owner = @event.Buildable.BarricadeData.owner.ToString();
-                var playerId = @event.InstigatorSteamId.ToString();
-                var steamPlayer = @event.Instigator.SteamPlayer;
-                var isadmin = @event.Instigator.Player.channel.owner.isAdmin;
-
-                if (owner == playerId || isadmin && m_allow_admin_bypass || @event.Instigator.SteamPlayer.isMemberOfSameGroupAs(steamPlayer) && m_allow_group_harvest)
-                {
-                    return;
-                }
-                else
-                {
-                    @event.IsCancelled = true;
-                    @event.Instigator.PrintMessageAsync("You can not harvest other players crops.");
-                }
+                return;
             }
+
+            var owner = @event.Buildable.BarricadeData.owner;
+            var player = @event.Instigator;
+            if (owner.ToString() == player.SteamId.ToString() || player.Player.channel.owner.isAdmin && _allow_admin_bypass || await @event.Buildable.Ownership.HasAccessAsync(player) && _allow_group_harvest)
+            {
+                return;
+            }
+
+            @event.IsCancelled = true;
+            player.PrintMessageAsync("You can not harvest other players crops.");
         }
     }
 }
